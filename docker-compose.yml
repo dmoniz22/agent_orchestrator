@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: omni-postgres
+    environment:
+      POSTGRES_USER: omni
+      POSTGRES_PASSWORD: omni_password
+      POSTGRES_DB: omni
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omni -d omni"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omni-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: omni-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: omni
+      DB_USER: omni
+      DB_PASSWORD: omni_password
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./CONFIG:/app/CONFIG
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - omni-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: omni-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - omni-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  omni-network:
+    driver: bridge

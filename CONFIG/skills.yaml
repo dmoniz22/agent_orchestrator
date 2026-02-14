@@ -1,0 +1,56 @@
+skills:
+  browser:
+    enabled: true
+    timeout_seconds: 30
+    rate_limit_rpm: 10
+    description: "Web browsing and scraping capabilities"
+  github:
+    enabled: true
+    auth_required: true
+    env_vars: ["GITHUB_TOKEN"]
+    timeout_seconds: 30
+    description: "GitHub repository operations"
+  twitter:
+    enabled: true
+    auth_required: true
+    env_vars: 
+      - "TWITTER_BEARER_TOKEN"
+      - "TWITTER_API_KEY"
+      - "TWITTER_API_SECRET"
+      - "TWITTER_ACCESS_TOKEN"
+      - "TWITTER_ACCESS_TOKEN_SECRET"
+    timeout_seconds: 30
+    description: "Twitter/X API operations"
+  linkedin:
+    enabled: true
+    auth_required: true
+    env_vars: ["LINKEDIN_ACCESS_TOKEN"]
+    timeout_seconds: 30
+    description: "LinkedIn API operations"
+  code_execute:
+    enabled: true
+    danger_level: "dangerous"
+    timeout_seconds: 30
+    sandbox:
+      image: "omni-sandbox"
+      timeout_seconds: 30
+      memory_limit: "512m"
+      cpu_limit: "1.0"
+      network_mode: "none"
+    description: "Execute Python code in sandboxed environment"
+  file:
+    enabled: true
+    danger_level: "guarded"
+    timeout_seconds: 10
+    description: "Read and write local files"
+  search:
+    enabled: true
+    danger_level: "safe"
+    timeout_seconds: 30
+    rate_limit_rpm: 10
+    description: "Web search via DuckDuckGo/Google"
+  calculator:
+    enabled: true
+    danger_level: "safe"
+    timeout_seconds: 5
+    description: "Safe mathematical expression evaluation"

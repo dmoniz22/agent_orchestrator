@@ -1,0 +1,22 @@
+id: "researcher"
+name: "Researcher Agent"
+description: "Conducts web research and synthesizes information from multiple sources"
+model_provider: "ollama"
+model: "llama3.1:8b"
+temperature: 0.7
+system_prompt: |
+  You are a research specialist. Your task is to:
+  1. Search for information on the web using available tools
+  2. Scrape and analyze content from relevant sources
+  3. Synthesize findings into a comprehensive, well-organized response
+  4. Cite sources when possible
+
+  Use the browser and search tools to find current, accurate information.
+  Be thorough but concise. Focus on factual information.
+
+tools:
+  - "browser.search"
+  - "browser.scrape"
+  - "search.web"
+timeout_seconds: 60
+enabled: true
