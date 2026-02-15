@@ -32,7 +32,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Collapsible Sidebar */}
       <Sidebar 
         currentView={currentView} 
@@ -41,35 +41,30 @@ export default function Home() {
         onToggle={() => setSidebarExpanded(!sidebarExpanded)}
       />
       
-      {/* Main Content Area - adjusts margin based on sidebar width */}
+      {/* Main Content Area - adjusts margin and width based on sidebar */}
       <main 
-        className={`flex-1 transition-all duration-300 ${
+        className={`transition-all duration-300 min-h-screen ${
           sidebarExpanded ? 'ml-64' : 'ml-16'
         }`}
       >
         {/* Header */}
         <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-          <div className="px-6 py-4 flex items-center justify-between">
+          <div className="px-4 py-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">OMNI</h1>
               <p className="text-sm text-gray-600">Ollama Multi-agent Network Interface</p>
             </div>
             <button
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className="p-2 rounded-md hover:bg-gray-100 text-gray-600 lg:hidden"
-              title={sidebarExpanded ? "Hide sidebar" : "Show sidebar"}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
             >
-              {sidebarExpanded ? (
-                <span className="text-sm">Hide Sidebar</span>
-              ) : (
-                <span className="text-sm">Show Sidebar</span>
-              )}
+              {sidebarExpanded ? 'Hide Sidebar' : 'Show Sidebar'}
             </button>
           </div>
         </header>
         
-        {/* Content */}
-        <div className="p-6">
+        {/* Content - with overflow handling */}
+        <div className="p-4 w-full overflow-x-hidden">
           {renderContent()}
         </div>
       </main>

@@ -66,17 +66,17 @@ export default function ToolManager() {
         </button>
       </div>
 
-      {/* Tools Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Tools Grid - responsive columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {tools.map((tool) => (
           <div
             key={tool.tool_id}
-            className="bg-white rounded-lg shadow border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg shadow border border-gray-200 p-4 hover:shadow-md transition-shadow min-w-0"
           >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-medium text-gray-900">{tool.name}</h3>
+            <div className="flex justify-between items-start mb-2 gap-2">
+              <h3 className="text-lg font-medium text-gray-900 truncate">{tool.name}</h3>
               <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
                   tool.danger_level === 'destructive'
                     ? 'bg-red-100 text-red-800'
                     : tool.danger_level === 'normal'
@@ -88,10 +88,10 @@ export default function ToolManager() {
               </span>
             </div>
             
-            <p className="text-sm text-gray-600 mb-3">{tool.description}</p>
+            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{tool.description}</p>
             
-            <div className="text-xs text-gray-500 mb-4">
-              ID: <code className="bg-gray-100 px-1 rounded">{tool.tool_id}</code>
+            <div className="text-xs text-gray-500 mb-4 truncate">
+              ID: <code className="bg-gray-100 px-1 rounded break-all">{tool.tool_id}</code>
             </div>
             
             <div className="flex justify-end space-x-2">
