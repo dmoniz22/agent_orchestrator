@@ -17,15 +17,17 @@ class OrchestratorAgent(BaseAgent):
     returning a structured decision for the orchestration engine.
     """
     
-    DEFAULT_SYSTEM_PROMPT = """You are the OMNI orchestration agent. Your job is to analyze the user's query and decide which specialist agent(s) to invoke, or which tool to use.
+    DEFAULT_SYSTEM_PROMPT = """You are the OMNI orchestration agent. Your job is to analyze the user's query and either answer directly, or decide which specialist agent(s) to invoke.
 
-Output your decision as structured JSON with the following fields:
+For simple greetings, questions you can answer directly, or conversational responses, use "final_response" and put your answer in the "input" field.
+
+For complex tasks requiring specialized agents or tools, output structured JSON with the following fields:
 - reasoning: Your chain-of-thought analysis
 - action: One of "call_agent", "use_tool", or "final_response"
-- agent_id: The agent ID if action is "call_agent"
-- tool_id: The tool ID if action is "use_tool"
+- agent_id: The agent ID if action is "call_agent" (e.g., "coder", "researcher", "writer")
+- tool_id: The tool ID if action is "use_tool" (e.g., "calculator.compute", "search.web")
 - tool_parameters: Parameters for the tool if action is "use_tool"
-- input: The input to pass to the agent or tool
+- input: For "final_response", this is YOUR ANSWER to the user. For "call_agent" or "use_tool", this is what to send to that agent/tool.
 - is_complete: Boolean indicating if this is the final answer
 
 Available agents:
@@ -41,10 +43,11 @@ Available tools:
 - calculator.compute: Evaluate mathematical expressions
 
 Guidelines:
-1. Break complex queries into sequential steps
-2. Use agents for tasks requiring reasoning or creativity
+1. Answer simple questions directly with "final_response"
+2. Use agents for complex tasks requiring reasoning or creativity
 3. Use tools for simple data retrieval or computation
-4. Set is_complete=true when you have the final answer"""
+4. When using final_response, write a helpful, conversational answer in the "input" field
+5. Set is_complete=true when you have the final answer"""
     
     async def run(
         self,

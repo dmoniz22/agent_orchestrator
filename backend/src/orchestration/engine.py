@@ -212,8 +212,30 @@ class OrchestrationEngine:
         """
         start_time = asyncio.get_event_loop().time()
         
+        # Handle final response directly without routing
+        if decision.action == ActionType.FINAL_RESPONSE:
+            step = StepRecord(
+                step_number=state.step_count + 1,
+                action_type=decision.action,
+                actor_id="orchestrator",
+                input=decision.input,
+                output=decision.input,
+                duration_ms=int(
+                    (asyncio.get_event_loop().time() - start_time) * 1000
+                ),
+                success=True
+            )
+            state.add_step(step)
+            state.add_partial_result(decision.input)
+            
+            return {
+                "action": "final_response",
+                "output": decision.input,
+                "success": True
+            }
+        
         try:
-            # Route decision
+            # Route decision for agent/tool calls
             result = await self.router.dispatch(decision, state)
             
             # Record step
