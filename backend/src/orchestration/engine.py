@@ -171,9 +171,22 @@ class OrchestrationEngine:
                 }
             )
             
+            # DEBUG: Log what the orchestrator returned
+            logger.info(
+                "Orchestrator returned decision",
+                decision_type=type(decision).__name__,
+                decision_preview=str(decision)[:200] if decision else "None"
+            )
+            
             # If decision is a dict, use it directly
             if isinstance(decision, dict):
-                return OrchestratorDecision(**decision)
+                orch_decision = OrchestratorDecision(**decision)
+                logger.info(
+                    "Created OrchestratorDecision",
+                    action=orch_decision.action,
+                    input_field=orch_decision.input[:100] if orch_decision.input else "None"
+                )
+                return orch_decision
             
             # If decision is a string, treat it as final response
             return OrchestratorDecision(
@@ -214,6 +227,13 @@ class OrchestrationEngine:
         
         # Handle final response directly without routing
         if decision.action == ActionType.FINAL_RESPONSE:
+            # DEBUG: Log what's in the decision
+            logger.info(
+                "Executing FINAL_RESPONSE",
+                decision_input=decision.input[:100] if decision.input else "None",
+                original_query=state.original_query[:100]
+            )
+            
             step = StepRecord(
                 step_number=state.step_count + 1,
                 action_type=decision.action,

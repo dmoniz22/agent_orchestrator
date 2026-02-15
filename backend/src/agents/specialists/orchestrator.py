@@ -91,13 +91,22 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
             max_tokens=self.config.max_tokens
         )
         
+        # DEBUG: Log the raw LLM response
+        logger.info(
+            "Orchestrator raw LLM response",
+            response_content=response.content[:500],
+            response_length=len(response.content)
+        )
+        
         # Parse decision
         decision = self._parse_decision(response.content)
         
+        # DEBUG: Log the parsed decision
         logger.info(
-            "Orchestrator decision",
+            "Orchestrator parsed decision",
             agent_id=self.agent_id,
             action=decision.get("action"),
+            input_field=decision.get("input", "")[:100],
             target=decision.get("agent_id") or decision.get("tool_id"),
             is_complete=decision.get("is_complete")
         )
