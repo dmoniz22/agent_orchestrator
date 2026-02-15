@@ -1,39 +1,55 @@
+'use client';
+
+import { useState } from 'react';
+import Sidebar from '@/components/Sidebar'
 import ChatInterface from '@/components/ChatInterface'
-import AgentPanel from '@/components/AgentPanel'
-import ToolTester from '@/components/ToolTester'
-import ModelSelector from '@/components/ModelSelector'
+import AgentManager from '@/components/AgentManager'
 import ToolManager from '@/components/ToolManager'
+import ModelManager from '@/components/ModelManager'
+import SettingsPanel from '@/components/SettingsPanel'
+
+type View = 'chat' | 'agents' | 'tools' | 'models' | 'settings'
 
 export default function Home() {
+  const [currentView, setCurrentView] = useState<View>('chat')
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'chat':
+        return <ChatInterface />
+      case 'agents':
+        return <AgentManager />
+      case 'tools':
+        return <ToolManager />
+      case 'models':
+        return <ModelManager />
+      case 'settings':
+        return <SettingsPanel />
+      default:
+        return <ChatInterface />
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">OMNI</h1>
-          <p className="text-sm text-gray-600">Ollama Multi-agent Network Interface</p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left Sidebar */}
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
       
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar - Model & System Info */}
-          <div className="space-y-4">
-            <ModelSelector />
-            <ToolManager />
+      {/* Main Content Area */}
+      <main className="flex-1 ml-64">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">OMNI</h1>
+            <p className="text-sm text-gray-600">Ollama Multi-agent Network Interface</p>
           </div>
-          
-          {/* Main Chat Interface */}
-          <div className="lg:col-span-2">
-            <ChatInterface />
-          </div>
-          
-          {/* Right Sidebar - Agents & Tools */}
-          <div className="space-y-4">
-            <AgentPanel />
-            <ToolTester />
-          </div>
+        </header>
+        
+        {/* Content */}
+        <div className="p-6">
+          {renderContent()}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }

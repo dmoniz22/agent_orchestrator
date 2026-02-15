@@ -58,12 +58,22 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border h-[600px] flex flex-col">
-      <div className="p-4 border-b bg-gray-50 rounded-t-lg">
-        <h2 className="text-lg font-semibold text-gray-800">Chat</h2>
-        <p className="text-sm text-gray-600">Ask anything to the multi-agent system</p>
+    <div className="bg-white rounded-lg shadow-md border h-[calc(100vh-12rem)] flex flex-col">
+      {/* Chat Header */}
+      <div className="p-4 border-b bg-gray-50 rounded-t-lg flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">Chat</h2>
+          <p className="text-sm text-gray-600">Ask anything to the multi-agent system</p>
+        </div>
+        <button
+          onClick={() => setMessages([])}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          Clear Chat
+        </button>
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
@@ -128,6 +138,7 @@ export default function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input */}
       <form onSubmit={handleSubmit} className="p-4 border-t">
         <div className="flex space-x-2">
           <input
