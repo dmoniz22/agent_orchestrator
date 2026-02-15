@@ -33,8 +33,8 @@ async def list_models() -> ModelListResponse:
     """
     settings = get_settings()
     provider = OllamaProvider(
-        base_url=settings.ollama.base_url,
-        default_model=settings.models.default_model
+        base_url=settings.ollama_base_url,
+        default_model="llama3.1:8b"
     )
     
     try:
@@ -46,17 +46,17 @@ async def list_models() -> ModelListResponse:
         
         return ModelListResponse(
             models=models,
-            default_model=settings.models.default_model,
-            fallback_model=settings.models.fallback_model
+            default_model="llama3.1:8b",
+            fallback_model="qwen2.5-coder:14b"
         )
     except Exception as e:
         # If Ollama is not available, return configured models
         return ModelListResponse(
             models=[
-                ModelInfo(name=settings.models.default_model, description="Default model")
+                ModelInfo(name="llama3.1:8b", description="Default model")
             ],
-            default_model=settings.models.default_model,
-            fallback_model=settings.models.fallback_model
+            default_model="llama3.1:8b",
+            fallback_model="qwen2.5-coder:14b"
         )
 
 

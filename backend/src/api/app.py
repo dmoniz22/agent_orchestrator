@@ -34,9 +34,9 @@ def get_model_provider() -> OllamaProvider:
     if _model_provider is None:
         settings = get_settings()
         _model_provider = OllamaProvider(
-            base_url=settings.ollama.base_url,
-            default_model=settings.models.default_model,
-            fallback_model=settings.models.fallback_model
+            base_url=settings.ollama_base_url,
+            default_model="llama3.1:8b",
+            fallback_model="qwen2.5-coder:14b"
         )
     return _model_provider
 
