@@ -163,113 +163,171 @@ export default function AgentManager() {
         </table>
       </div>
 
-      {/* Add Agent Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Add New Agent</h3>
+      {/* Add/Edit Agent Modal */}
+      {(showAddModal || editingAgent) && (
+        <AgentModal
+          agent={editingAgent}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingAgent(null);
+          }}
+          onSave={async (agentData) => {
+            console.log('Saving agent:', agentData);
+            // TODO: Call API to create/update agent
+            setShowAddModal(false);
+            setEditingAgent(null);
+            await loadAgents();
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Agent Modal Component for Add/Edit
+function AgentModal({ 
+  agent, 
+  onClose, 
+  onSave 
+}: { 
+  agent: AgentConfig | null;
+  onClose: () => void;
+  onSave: (agent: AgentConfig) => void;
+}) {
+  const isEditing = !!agent;
+  
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const agentData: AgentConfig = {
+      agent_id: (formData.get('agent_id') as string) || agent?.agent_id || '',
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      model: formData.get('model') as string,
+      temperature: parseFloat(formData.get('temperature') as string),
+      allowed_tools: (formData.get('allowed_tools') as string).split(',').map(t => t.trim()).filter(Boolean),
+    };
+    
+    onSave(agentData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">
+            {isEditing ? 'Edit Agent' : 'Add New Agent'}
+          </h3>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Agent ID</label>
+              <input
+                type="text"
+                name="agent_id"
+                required
+                defaultValue={agent?.agent_id || ''}
+                readOnly={isEditing}
+                placeholder="my-custom-agent"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100"
+              />
+              {isEditing && (
+                <p className="mt-1 text-xs text-gray-500">Agent ID cannot be changed</p>
+              )}
             </div>
             
-            <form onSubmit={handleAddAgent} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Agent ID</label>
-                  <input
-                    type="text"
-                    name="agent_id"
-                    required
-                    placeholder="my-custom-agent"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    placeholder="My Custom Agent"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  rows={2}
-                  placeholder="What does this agent do?"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Model</label>
-                  <select
-                    name="model"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  >
-                    <option value="llama3.1:8b">llama3.1:8b</option>
-                    <option value="qwen2.5-coder:14b">qwen2.5-coder:14b</option>
-                    <option value="phi3.5:3.8b">phi3.5:3.8b</option>
-                    <option value="deepseek-coder-v2:16b">deepseek-coder-v2:16b</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Temperature ({0.0} - 2.0)
-                  </label>
-                  <input
-                    type="number"
-                    name="temperature"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    defaultValue="0.7"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Allowed Tools (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  name="allowed_tools"
-                  placeholder="calculator.compute, file.read, search.web"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Leave empty to allow all tools
-                </p>
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700"
-                >
-                  Create Agent
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                type="text"
+                name="name"
+                required
+                defaultValue={agent?.name || ''}
+                placeholder="My Custom Agent"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              />
+            </div>
           </div>
-        </div>
-      )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <textarea
+              name="description"
+              rows={2}
+              defaultValue={agent?.description || ''}
+              placeholder="What does this agent do?"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Model</label>
+              <select
+                name="model"
+                defaultValue={agent?.model || 'llama3.1:8b'}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              >
+                <option value="llama3.1:8b">llama3.1:8b</option>
+                <option value="qwen2.5-coder:14b">qwen2.5-coder:14b</option>
+                <option value="phi3.5:3.8b">phi3.5:3.8b</option>
+                <option value="deepseek-coder-v2:16b">deepseek-coder-v2:16b</option>
+                <option value="gemma3:12b">gemma3:12b</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Temperature (0.0 - 2.0)
+              </label>
+              <input
+                type="number"
+                name="temperature"
+                min="0"
+                max="2"
+                step="0.1"
+                defaultValue={agent?.temperature || 0.7}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Allowed Tools (comma-separated)
+            </label>
+            <input
+              type="text"
+              name="allowed_tools"
+              defaultValue={agent?.allowed_tools?.join(', ') || ''}
+              placeholder="calculator.compute, file.read, search.web"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Available tools: calculator.compute, search.web, file.read, file.write
+            </p>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700"
+            >
+              {isEditing ? 'Save Changes' : 'Create Agent'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
