@@ -20,7 +20,8 @@ export default function ModelSelector() {
 
   const fetchModels = async () => {
     try {
-      const response = await fetch('/api/v1/models');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/models`);
       if (!response.ok) throw new Error('Failed to fetch models');
       const data = await response.json();
       setModels(data.models);
