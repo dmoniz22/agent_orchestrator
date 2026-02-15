@@ -21,7 +21,7 @@ from src.skills.library.calculator import CalculatorTool
 from src.skills.library.search import SearchTool
 from src.skills.library.filesystem import FileReadTool, FileWriteTool
 from src.orchestration.engine import get_orchestration_engine
-from .routes import agents, health, models, tasks, tools
+from .routes import agents, health, models, tasks, tools, tool_management
 
 logger = get_logger(__name__)
 
@@ -158,6 +158,7 @@ def create_app() -> FastAPI:
     app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Tasks"])
     app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(tools.router, prefix="/api/v1/tools", tags=["Tools"])
+    app.include_router(tool_management.router, prefix="/api/v1", tags=["Tool Management"])
     
     @app.on_event("startup")
     async def startup_event():
