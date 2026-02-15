@@ -1,6 +1,8 @@
 import ChatInterface from '@/components/ChatInterface'
 import AgentPanel from '@/components/AgentPanel'
 import ToolTester from '@/components/ToolTester'
+import ModelSelector from '@/components/ModelSelector'
+import ToolManager from '@/components/ToolManager'
 
 export default function Home() {
   return (
@@ -13,14 +15,20 @@ export default function Home() {
       </header>
       
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Model & System Info */}
+          <div className="space-y-4">
+            <ModelSelector />
+            <ToolManager />
+          </div>
+          
           {/* Main Chat Interface */}
           <div className="lg:col-span-2">
             <ChatInterface />
           </div>
           
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Right Sidebar - Agents & Tools */}
+          <div className="space-y-4">
             <AgentPanel />
             <ToolTester />
           </div>

@@ -153,9 +153,9 @@ class OrchestrationEngine:
         self.state_machine.transition(state, TaskStatus.EXECUTING)
         
         if not self.orchestrator_agent:
-            # Default: complete with no-op
+            # Default: complete with input as response
             return OrchestratorDecision(
-                reasoning="No orchestrator agent configured",
+                reasoning="No orchestrator agent configured - echoing input",
                 action=ActionType.FINAL_RESPONSE,
                 input=state.original_query,
                 is_complete=True
@@ -163,8 +163,26 @@ class OrchestrationEngine:
         
         try:
             # Call orchestrator agent
-            decision = await self.orchestrator_agent.decide(state)
-            return decision
+            decision = await self.orchestrator_agent.run(
+                input_text=state.original_query,
+                context={
+                    "available_agents": state.available_agents,
+                    "available_tools": state.available_tools
+                }
+            )
+            
+            # If decision is a dict, use it directly
+            if isinstance(decision, dict):
+                return OrchestratorDecision(**decision)
+            
+            # If decision is a string, treat it as final response
+            return OrchestratorDecision(
+                reasoning="Orchestrator response",
+                action=ActionType.FINAL_RESPONSE,
+                input=str(decision),
+                is_complete=True
+            )
+            
         except Exception as e:
             logger.error(
                 "Orchestrator decision failed",
