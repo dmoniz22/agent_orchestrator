@@ -71,14 +71,14 @@ export default function ModelManager() {
       </div>
 
       {/* Models List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Model
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                 Status
               </th>
             </tr>
@@ -86,22 +86,22 @@ export default function ModelManager() {
           <tbody className="bg-white divide-y divide-gray-200">
             {models.map((model) => (
               <tr key={model.name}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <CpuChipIcon className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{model.name}</div>
-                      <div className="text-xs text-gray-500">{model.description}</div>
+                <td className="px-6 py-4">
+                  <div className="flex items-center min-w-0">
+                    <CpuChipIcon className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-gray-900 break-all">{model.name}</div>
+                      <div className="text-xs text-gray-500 break-words">{model.description}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4">
                   {model.name === defaultModel ? (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 whitespace-nowrap">
                       Default
                     </span>
                   ) : (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">
                       Available
                     </span>
                   )}

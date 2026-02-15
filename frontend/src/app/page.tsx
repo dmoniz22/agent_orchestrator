@@ -32,8 +32,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Collapsible Sidebar */}
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Collapsible Sidebar - Fixed Position */}
       <Sidebar 
         currentView={currentView} 
         onViewChange={setCurrentView}
@@ -41,11 +41,13 @@ export default function Home() {
         onToggle={() => setSidebarExpanded(!sidebarExpanded)}
       />
       
-      {/* Main Content Area - adjusts margin and width based on sidebar */}
-      <main 
-        className={`transition-all duration-300 min-h-screen ${
-          sidebarExpanded ? 'ml-64' : 'ml-16'
-        }`}
+      {/* Main Content Area */}
+      <div 
+        className="transition-all duration-300 min-h-screen"
+        style={{
+          marginLeft: sidebarExpanded ? '256px' : '64px',
+          width: sidebarExpanded ? 'calc(100% - 256px)' : 'calc(100% - 64px)',
+        }}
       >
         {/* Header */}
         <header className="bg-white shadow-sm border-b sticky top-0 z-10">
@@ -63,11 +65,11 @@ export default function Home() {
           </div>
         </header>
         
-        {/* Content - with overflow handling */}
-        <div className="p-4 w-full overflow-x-hidden">
+        {/* Content */}
+        <div className="p-4 w-full max-w-full box-border">
           {renderContent()}
         </div>
-      </main>
+      </div>
     </div>
   )
 }
