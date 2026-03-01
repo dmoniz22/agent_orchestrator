@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from src.core.logging import get_logger
-from src.orchestration.engine import OrchestrationEngine
+from src.orchestration.engine import get_orchestration_engine
 from src.orchestration.schemas import WorkflowConfig
 
 logger = get_logger(__name__)
@@ -55,8 +55,8 @@ async def execute_task(request: TaskRequest) -> TaskResponse:
     )
     
     try:
-        # TODO: Initialize orchestration engine with proper dependencies
-        engine = OrchestrationEngine()
+        # Use singleton orchestration engine with orchestrator agent configured
+        engine = await get_orchestration_engine()
         
         result = await engine.run(
             query=request.query,

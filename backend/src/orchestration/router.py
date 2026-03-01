@@ -95,10 +95,20 @@ class Router:
         if self.agent_registry:
             agent = self.agent_registry.get_agent(agent_id)
             if not agent:
-                raise RouterError(
-                    message=f"Agent not found: {agent_id}",
-                    agent_id=agent_id
+                logger.warning(
+                    "Agent not found, returning error response",
+                    agent_id=agent_id,
+                    available_agents=list(self.agent_registry.list_agents().keys())
                 )
+                # Return graceful error instead of raising exception
+                return {
+                    "action": "agent_call",
+                    "agent_id": agent_id,
+                    "input": decision.input,
+                    "success": False,
+                    "error": f"Agent '{agent_id}' does not exist. Available agents: coder, researcher, writer, social",
+                    "output": f"I don't have access to an agent called '{agent_id}'. I can help you directly or connect you with: coder, researcher, writer, or social media specialist. What do you need?"
+                }
         
         logger.info(
             "Dispatching to agent",
@@ -140,10 +150,20 @@ class Router:
         if self.tool_registry:
             tool = self.tool_registry.get_tool(tool_id)
             if not tool:
-                raise RouterError(
-                    message=f"Tool not found: {tool_id}",
-                    tool_id=tool_id
+                logger.warning(
+                    "Tool not found, returning error response",
+                    tool_id=tool_id,
+                    available_tools=list(self.tool_registry.list_tools().keys())
                 )
+                # Return graceful error instead of raising exception
+                return {
+                    "action": "tool_call",
+                    "tool_id": tool_id,
+                    "input": decision.input,
+                    "success": False,
+                    "error": f"Tool '{tool_id}' does not exist. Available tools: calculator.compute, search.web, file.read, file.write",
+                    "output": f"I don't have access to a tool called '{tool_id}'. I can help you with: calculations, web search, file reading, or file writing. What would you like to do?"
+                }
         
         logger.info(
             "Dispatching to tool",

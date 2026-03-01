@@ -33,6 +33,7 @@ class OrchestrationEngine:
         router: Router | None = None,
         collator: Collator | None = None,
         orchestrator_agent=None,
+        memory_manager=None,
         max_steps: int = 10,
         default_timeout: float = 120.0
     ) -> None:
@@ -43,6 +44,7 @@ class OrchestrationEngine:
             router: Decision router.
             collator: Result collator.
             orchestrator_agent: Orchestrator agent.
+            memory_manager: Memory manager for conversation history.
             max_steps: Maximum execution steps.
             default_timeout: Default timeout per step.
         """
@@ -50,12 +52,14 @@ class OrchestrationEngine:
         self.router = router or Router()
         self.collator = collator or Collator()
         self.orchestrator_agent = orchestrator_agent
+        self.memory_manager = memory_manager
         self.max_steps = max_steps
         self.default_timeout = default_timeout
         
         logger.info(
             "OrchestrationEngine initialized",
-            max_steps=max_steps
+            max_steps=max_steps,
+            has_memory=memory_manager is not None
         )
     
     async def run(
@@ -78,6 +82,31 @@ class OrchestrationEngine:
         Returns:
             Execution result.
         """
+        # Store user query in memory
+        if self.memory_manager:
+            await self.memory_manager.store_conversation_turn(
+                role="user",
+                content=query,
+                session_id=session_id
+            )
+        
+        # Load conversation history
+        conversation_history = []
+        if self.memory_manager:
+            history_entries = await self.memory_manager.get_conversation_history(
+                session_id=session_id,
+                limit=10
+            )
+            from src.models.provider import Message
+            for entry in history_entries:
+                role = entry.metadata.get("role", "user")
+                conversation_history.append(Message(role=role, content=entry.content))
+            logger.info(
+                "Loaded conversation history",
+                session_id=str(session_id),
+                history_count=len(conversation_history)
+            )
+        
         # Initialize execution state
         state = ExecutionState(
             session_id=session_id,
@@ -85,13 +114,15 @@ class OrchestrationEngine:
             current_objective=query,
             max_steps=max_steps or self.max_steps,
             available_agents=available_agents or [],
-            available_tools=available_tools or []
+            available_tools=available_tools or [],
+            conversation_history=conversation_history
         )
         
         logger.info(
             "Starting orchestration",
             task_id=str(state.task_id),
-            query=query[:100]
+            query=query[:100],
+            has_memory=self.memory_manager is not None
         )
         
         try:
@@ -124,7 +155,22 @@ class OrchestrationEngine:
             
             # Collate final results
             if state.status == TaskStatus.COMPLETED:
-                return await self.collator.collate(state)
+                result = await self.collator.collate(state)
+                
+                # Store assistant response in memory
+                if self.memory_manager and result.get("response"):
+                    await self.memory_manager.store_conversation_turn(
+                        role="assistant",
+                        content=result["response"],
+                        session_id=session_id
+                    )
+                    logger.info(
+                        "Stored assistant response in memory",
+                        session_id=str(session_id),
+                        response_length=len(result["response"])
+                    )
+                
+                return result
             else:
                 return self.collator.format_error(state)
                 
@@ -162,12 +208,13 @@ class OrchestrationEngine:
             )
         
         try:
-            # Call orchestrator agent
+            # Call orchestrator agent with conversation history
             decision = await self.orchestrator_agent.run(
                 input_text=state.original_query,
                 context={
                     "available_agents": state.available_agents,
-                    "available_tools": state.available_tools
+                    "available_tools": state.available_tools,
+                    "conversation_history": state.conversation_history
                 }
             )
             
@@ -272,8 +319,13 @@ class OrchestrationEngine:
             )
             state.add_step(step)
             
-            # Add partial result
+            # Add partial result - include error outputs too so user sees helpful message
             if result.get("success"):
+                state.add_partial_result(str(result))
+            elif result.get("output"):
+                # Add the helpful error message to partial results
+                state.add_partial_result(result["output"])
+            else:
                 state.add_partial_result(str(result))
             
             return result
@@ -313,6 +365,7 @@ async def get_orchestration_engine(
     router: Router | None = None,
     collator: Collator | None = None,
     orchestrator_agent=None,
+    memory_manager=None,
     max_steps: int = 10
 ) -> OrchestrationEngine:
     """Get or create global orchestration engine.
@@ -322,6 +375,7 @@ async def get_orchestration_engine(
         router: Decision router.
         collator: Result collator.
         orchestrator_agent: Orchestrator agent.
+        memory_manager: Memory manager for conversation history.
         max_steps: Maximum steps.
         
     Returns:
@@ -334,6 +388,7 @@ async def get_orchestration_engine(
             router=router,
             collator=collator,
             orchestrator_agent=orchestrator_agent,
+            memory_manager=memory_manager,
             max_steps=max_steps
         )
     return _engine

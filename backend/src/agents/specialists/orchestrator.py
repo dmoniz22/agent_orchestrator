@@ -21,18 +21,27 @@ class OrchestratorAgent(BaseAgent):
 
 IMPORTANT: For most queries, especially greetings, simple questions, or conversational responses, you should ANSWER DIRECTLY using final_response.
 
+You have access to the conversation history. Use it to maintain context and provide relevant responses that reference previous exchanges.
+
 When to answer directly (use final_response):
 - Greetings ("Hello", "Hi", "How are you?")
 - Simple questions you can answer from your knowledge
 - Conversational responses
 - General chit-chat
 - Questions about yourself or the system
+- Follow-up questions that reference previous conversation
+- Requests for tools or capabilities that don't exist - explain what IS available
 
 When to route to agents:
 - Complex coding tasks → "coder" agent
 - Research or current info → "researcher" agent
 - Writing long content → "writer" agent
 - Social media posts → "social" agent
+
+CRITICAL RULES:
+1. ONLY use agent_id from the available agents list below
+2. ONLY use tool_id from the available tools list below
+3. If user asks for a tool/agent that doesn't exist, use final_response to explain what IS available
 
 OUTPUT FORMAT - You must output valid JSON:
 {
@@ -76,14 +85,24 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
         logger.info(
             "Orchestrator analyzing query",
             agent_id=self.agent_id,
-            query=input_text[:100]
+            query=input_text[:100],
+            has_history=bool(context and context.get("conversation_history"))
         )
         
         # Build prompt with context
         system_prompt = self._build_system_prompt(context)
         
+        # Get conversation history from context
+        history = None
+        if context and "conversation_history" in context:
+            history = context["conversation_history"]
+            logger.info(
+                "Using conversation history",
+                history_turns=len(history) if history else 0
+            )
+        
         # Get decision from model
-        messages = self.build_messages(system_prompt, input_text)
+        messages = self.build_messages(system_prompt, input_text, history)
         
         response = await self.generate(
             messages,
@@ -91,15 +110,18 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
             max_tokens=self.config.max_tokens
         )
         
+        response_text = response.content or ""
+        
         # DEBUG: Log the raw LLM response
         logger.info(
             "Orchestrator raw LLM response",
-            response_content=response.content[:500],
-            response_length=len(response.content)
+            response_preview=response_text[:500],
+            response_length=len(response_text),
+            full_response=response_text  # Log complete response for debugging
         )
         
         # Parse decision
-        decision = self._parse_decision(response.content)
+        decision = self._parse_decision(response_text, input_text)
         
         # DEBUG: Log the parsed decision
         logger.info(
@@ -142,11 +164,12 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
         
         return "\n".join(lines)
     
-    def _parse_decision(self, content: str) -> dict[str, Any]:
+    def _parse_decision(self, content: str, original_query: str = "") -> dict[str, Any]:
         """Parse decision from model response.
         
         Args:
             content: Model response content.
+            original_query: The original user query (to prevent echoing).
             
         Returns:
             Parsed decision dict.
@@ -175,6 +198,36 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
             )
             decision = self._infer_decision(content)
         
+        # Get the input field from the decision, with fallback
+        input_field = decision.get("input", "")
+        
+        # Convert dict/object input to string (happens for tool parameters)
+        if isinstance(input_field, dict):
+            input_field = json.dumps(input_field)
+        elif not isinstance(input_field, str):
+            input_field = str(input_field) if input_field else ""
+        
+        # ANTI-ECHO: Only detect exact echo (input equals original query exactly)
+        # Don't trigger on responses that happen to contain the query
+        if input_field and original_query and isinstance(input_field, str) and (
+            input_field.strip().lower() == original_query.strip().lower()
+        ):
+            logger.warning(
+                "Echo detected! LLM returned exact user query as input field",
+                input_field=input_field,
+                original_query=original_query,
+                using_fallback="raw LLM response"
+            )
+            input_field = content.strip() if content else "I'm sorry, I didn't understand that. Could you rephrase?"
+        
+        # If input is still empty or None, use content
+        if not input_field:
+            logger.warning(
+                "Empty input field in LLM response, using content fallback",
+                content_preview=content[:200]
+            )
+            input_field = content.strip() if content else "I'm sorry, I didn't understand that. Could you rephrase?"
+        
         # Ensure required fields
         return {
             "reasoning": decision.get("reasoning", "No reasoning provided"),
@@ -182,7 +235,7 @@ Available tools: search.web, file.read, file.write, calculator.compute"""
             "agent_id": decision.get("agent_id"),
             "tool_id": decision.get("tool_id"),
             "tool_parameters": decision.get("tool_parameters", {}),
-            "input": decision.get("input", content),
+            "input": input_field,
             "is_complete": decision.get("is_complete", True)
         }
     

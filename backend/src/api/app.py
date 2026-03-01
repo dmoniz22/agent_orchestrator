@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import get_settings
 from src.core.logging import get_logger
 from src.models.ollama import OllamaProvider
+from src.models import FallbackProvider, get_fallback_provider
 from src.agents.registry import get_agent_registry
 from src.agents.specialists.orchestrator import OrchestratorAgent
 from src.agents.specialists.coder import CoderAgent
@@ -21,23 +22,54 @@ from src.skills.library.calculator import CalculatorTool
 from src.skills.library.search import SearchTool
 from src.skills.library.filesystem import FileReadTool, FileWriteTool
 from src.orchestration.engine import get_orchestration_engine
+from src.memory.manager import MemoryManager
 from .routes import agents, health, models, tasks, tools, tool_management
 
 logger = get_logger(__name__)
 
-# Global model provider
-_model_provider: OllamaProvider | None = None
+# Global model provider (uses fallback between Ollama and OpenRouter)
+_model_provider: FallbackProvider | None = None
 
-def get_model_provider() -> OllamaProvider:
-    """Get or create model provider."""
+# Global memory manager
+_memory_manager: MemoryManager | None = None
+
+def get_memory_manager() -> MemoryManager:
+    """Get or create memory manager."""
+    global _memory_manager
+    if _memory_manager is None:
+        _memory_manager = MemoryManager()
+        logger.info("Memory manager initialized")
+    return _memory_manager
+
+def get_model_provider() -> FallbackProvider:
+    """Get or create model provider with Ollama + OpenRouter fallback.
+    
+    Uses FallbackProvider to automatically:
+    - Route local models (llama3.1, qwen2.5, etc.) to Ollama
+    - Route cloud models (claude-*, gpt-*, etc.) to OpenRouter
+    - Fallback to OpenRouter if Ollama fails
+    """
     global _model_provider
     if _model_provider is None:
         settings = get_settings()
-        _model_provider = OllamaProvider(
-            base_url=settings.ollama_base_url,
-            default_model="llama3.1:8b",
-            fallback_model="qwen2.5-coder:14b"
+        
+        # Use FallbackProvider with OpenRouter integration
+        _model_provider = FallbackProvider(
+            ollama_url=settings.ollama_base_url,
+            ollama_default_model=settings.ollama_default_model,
+            openrouter_api_key=settings.openrouter_api_key,
+            openrouter_default_model=settings.openrouter_default_model,
+            prefer_local=settings.provider_prefer_local,
+            fallback_on_error=settings.provider_fallback_on_error
         )
+        
+        logger.info(
+            "Fallback provider initialized",
+            ollama_url=settings.ollama_base_url,
+            openrouter_configured=bool(settings.openrouter_api_key),
+            prefer_local=settings.provider_prefer_local
+        )
+        
     return _model_provider
 
 
@@ -122,11 +154,17 @@ async def initialize_registries():
         tool_registry.register(tool)
         logger.info(f"Registered tool: {tool.tool_id}")
     
-    # Initialize orchestration engine with orchestrator agent
+    # Initialize memory manager
+    memory_manager = get_memory_manager()
+    
+    # Initialize orchestration engine with orchestrator agent and memory
     orchestrator = agent_registry.get_agent("orchestrator")
     if orchestrator:
-        await get_orchestration_engine(orchestrator_agent=orchestrator)
-        logger.info("Orchestration engine initialized")
+        await get_orchestration_engine(
+            orchestrator_agent=orchestrator,
+            memory_manager=memory_manager
+        )
+        logger.info("Orchestration engine initialized with memory")
     
     logger.info("Registries initialized successfully")
 

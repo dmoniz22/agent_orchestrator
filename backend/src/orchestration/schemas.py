@@ -166,6 +166,10 @@ class ExecutionState(BaseModel):
         default_factory=dict,
         description="Additional metadata"
     )
+    conversation_history: list = Field(
+        default_factory=list,
+        description="Previous conversation turns for context"
+    )
     
     def add_step(self, step: StepRecord) -> None:
         """Add a step to history and increment step count.

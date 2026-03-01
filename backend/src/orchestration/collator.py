@@ -112,19 +112,56 @@ class Collator:
         Returns:
             Synthesized response.
         """
-        # Simple concatenation for now
-        # TODO: Use model provider for intelligent synthesis
+        if not state.partial_results:
+            return state.original_query
         
+        # If only one result, return it directly
         if len(state.partial_results) == 1:
-            return state.partial_results[0]
+            result = state.partial_results[0]
+            # Try to extract just the conversational output from JSON-like results
+            if "'output':" in result or '"output":' in result:
+                import re
+                # Look for output field in dict-like string
+                match = re.search(r"['\"]output['\"]:\s*['\"](.+?)['\"](?:,|})", result)
+                if match:
+                    return match.group(1)
+            return result
         
-        # Combine multiple results
-        parts = [
-            f"Result {i+1}:\n{result}"
-            for i, result in enumerate(state.partial_results)
-        ]
+        # Multiple results - filter to find the most relevant one
+        # Priority: final_response > successful tool/agent calls > errors
+        final_responses = []
+        error_responses = []
+        other_responses = []
         
-        return "\n\n".join(parts)
+        for result in state.partial_results:
+            if "final_response" in result or "action': 'final_response" in result:
+                final_responses.append(result)
+            elif "'success': False" in result or '"success": False' in result:
+                # Extract just the output field from error responses
+                import re
+                match = re.search(r"['\"]output['\"]:\s*['\"](.+?)['\"](?:,|})", result)
+                if match:
+                    error_responses.append(match.group(1))
+                else:
+                    error_responses.append(result)
+            else:
+                other_responses.append(result)
+        
+        # Return the last final response if available
+        if final_responses:
+            last = final_responses[-1]
+            import re
+            match = re.search(r"['\"]output['\"]:\s*['\"](.+?)['\"](?:,|})", last)
+            if match:
+                return match.group(1)
+            return last
+        
+        # Return the last error response with helpful message
+        if error_responses:
+            return error_responses[-1]
+        
+        # Fallback to last result
+        return state.partial_results[-1]
     
     def format_error(self, state: ExecutionState) -> dict[str, Any]:
         """Format error response.
