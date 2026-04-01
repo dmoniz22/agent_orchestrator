@@ -16,14 +16,14 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install backend deps
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f omni/backend/requirements.txt ]; then pip install -r omni/backend/requirements.txt; fi
-        pip install pytest pytest-asyncio
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f omni/backend/requirements.txt ]; then pip install -r omni/backend/requirements.txt; fi
+          pip install pytest pytest-asyncio
       - name: Run backend tests
-      run: |
-        cd omni/backend
-        pytest tests -v --tb=short || echo "No tests"
+        run: |
+          cd omni/backend
+          pytest tests -v --tb=short || echo "No tests"
 
   backend-lint:
     needs: [backend-tests]
@@ -35,13 +35,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install linting tools
-      run: |
-        python -m pip install black ruff isort
+        run: |
+          python -m pip install black ruff isort
       - name: Lint backend
-      run: |
-        black omni/backend || true
-        ruff check omni/backend/ || true
-        isort --check-only omni/backend/ || true
+        run: |
+          black omni/backend || true
+          ruff check omni/backend/ || true
+          isort --check-only omni/backend/ || true
 
   frontend-tests:
     needs: [backend-tests]
@@ -49,12 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
       - name: Install frontend deps
-      run: |
-        if [ -d omni/frontend ]; then (cd omni/frontend && npm ci); fi
+        run: |
+          if [ -d omni/frontend ]; then (cd omni/frontend && npm ci); fi
       - name: Run frontend tests
-      run: |
-        if [ -d omni/frontend/tests ]; then (cd omni/frontend && npm test --silent || true); else echo "No frontend tests"; fi
+        run: |
+          if [ -d omni/frontend/tests ]; then (cd omni/frontend && npm test --silent || true); else echo "No frontend tests"; fi
