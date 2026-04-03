@@ -27,12 +27,12 @@ services:
       dockerfile: backend/Dockerfile
     container_name: omni-backend
     environment:
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: omni
       DB_USER: omni
       DB_PASSWORD: omni_password
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_BASE_URL: http://localhost:11434
       API_HOST: 0.0.0.0
       API_PORT: 8000
       LOG_LEVEL: INFO
@@ -48,16 +48,13 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - omni-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    network_mode: host
 
   frontend:
     build:
