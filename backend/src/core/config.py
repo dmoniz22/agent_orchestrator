@@ -25,7 +25,9 @@ class DatabaseConfig(BaseSettings):
     @property
     def url(self) -> str:
         """Generate PostgreSQL connection URL."""
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        return (
+            f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        )
 
 
 class APIConfig(BaseSettings):
@@ -39,8 +41,14 @@ class APIConfig(BaseSettings):
     host: str = Field(default="0.0.0.0", description="API server host")
     port: int = Field(default=8000, description="API server port")
     cors_origins: list[str] = Field(
-        default=["http://localhost:3000"],
-        description="Allowed CORS origins"
+        default=[
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002",
+            "http://localhost:3003",
+            "http://127.0.0.1:3000",
+        ],
+        description="Allowed CORS origins",
     )
 
     @field_validator("cors_origins", mode="before")
@@ -75,50 +83,33 @@ class Settings(BaseSettings):
     api: APIConfig = Field(default_factory=APIConfig)
 
     # Ollama
-    ollama_base_url: str = Field(
-        default="http://localhost:11434",
-        description="Ollama base URL"
-    )
-    ollama_default_model: str = Field(
-        default="llama3.1:8b",
-        description="Default Ollama model"
-    )
-    
+    ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama base URL")
+    ollama_default_model: str = Field(default="llama3.1:8b", description="Default Ollama model")
+
     # OpenRouter (Cloud Fallback)
-    openrouter_api_key: str = Field(
-        default="",
-        description="OpenRouter API key",
-        repr=False
-    )
+    openrouter_api_key: str = Field(default="", description="OpenRouter API key", repr=False)
     openrouter_base_url: str = Field(
-        default="https://openrouter.ai/api/v1",
-        description="OpenRouter base URL"
+        default="https://openrouter.ai/api/v1", description="OpenRouter base URL"
     )
     openrouter_default_model: str = Field(
-        default="anthropic/claude-3-haiku-20240307",
-        description="Default OpenRouter model"
+        default="anthropic/claude-3-haiku-20240307", description="Default OpenRouter model"
     )
     openrouter_fallback_model: str = Field(
-        default="openai/gpt-3.5-turbo-0125",
-        description="OpenRouter fallback model"
+        default="openai/gpt-3.5-turbo-0125", description="OpenRouter fallback model"
     )
     openrouter_site_url: str = Field(
-        default="http://localhost:3000",
-        description="Site URL for OpenRouter rankings"
+        default="http://localhost:3000", description="Site URL for OpenRouter rankings"
     )
     openrouter_site_name: str = Field(
-        default="OMNI Multi-Agent System",
-        description="Site name for OpenRouter rankings"
+        default="OMNI Multi-Agent System", description="Site name for OpenRouter rankings"
     )
-    
+
     # Provider Fallback Settings
     provider_prefer_local: bool = Field(
-        default=True,
-        description="Prefer local Ollama models when available"
+        default=True, description="Prefer local Ollama models when available"
     )
     provider_fallback_on_error: bool = Field(
-        default=True,
-        description="Automatically fallback to cloud on error"
+        default=True, description="Automatically fallback to cloud on error"
     )
 
     # Security
@@ -130,7 +121,9 @@ class Settings(BaseSettings):
     twitter_api_key: str = Field(default="", description="Twitter API key", repr=False)
     twitter_api_secret: str = Field(default="", description="Twitter API secret", repr=False)
     twitter_access_token: str = Field(default="", description="Twitter access token", repr=False)
-    twitter_access_token_secret: str = Field(default="", description="Twitter access token secret", repr=False)
+    twitter_access_token_secret: str = Field(
+        default="", description="Twitter access token secret", repr=False
+    )
     linkedin_access_token: str = Field(default="", description="LinkedIn access token", repr=False)
 
 
@@ -206,10 +199,7 @@ class ConfigLoader:
         if not agents_dir.exists():
             return []
 
-        return [
-            f.stem for f in agents_dir.iterdir()
-            if f.suffix == ".yaml" and f.is_file()
-        ]
+        return [f.stem for f in agents_dir.iterdir() if f.suffix == ".yaml" and f.is_file()]
 
     def list_tools(self) -> list[str]:
         """List all available tool configurations."""
@@ -217,10 +207,7 @@ class ConfigLoader:
         if not tools_dir.exists():
             return []
 
-        return [
-            f.stem for f in tools_dir.iterdir()
-            if f.suffix == ".yaml" and f.is_file()
-        ]
+        return [f.stem for f in tools_dir.iterdir() if f.suffix == ".yaml" and f.is_file()]
 
     def _load_config(self, relative_path: str) -> dict[str, Any]:
         """Load a configuration file with caching."""
@@ -238,6 +225,7 @@ class ConfigLoader:
 # Global settings instance
 _settings: Settings | None = None
 
+
 def get_settings() -> Settings:
     """Get the global settings instance.
 
@@ -250,6 +238,7 @@ def get_settings() -> Settings:
     if _settings is None:
         _settings = Settings()
     return _settings
+
 
 def reload_settings() -> Settings:
     """Reload settings from environment variables.
