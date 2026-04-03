@@ -37,12 +37,13 @@ services:
       API_PORT: 8000
       LOG_LEVEL: INFO
       ENVIRONMENT: production
+      ENV_FILE_PATH: /app/.env
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app/backend
-      - ./backend/.env:/app/.env:ro
-      - ./CONFIG:/app/CONFIG
+      - ./backend/src:/app/src
+      - ./backend/CONFIG:/app/CONFIG
+      - ./backend/.env:/app/.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,10 +67,17 @@ services:
     ports:
       - "3001:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
     volumes:
-      - ./frontend:/app
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/next.config.js:/app/next.config.js
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/postcss.config.js:/app/postcss.config.js
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
       - /app/node_modules
+      - /app/.next
     networks:
       - omni-network
     restart: unless-stopped

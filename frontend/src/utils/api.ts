@@ -1,3 +1,5 @@
+import { Agent, Tool, TaskResponse } from '@/types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function fetchAgents(): Promise<Agent[]> {
@@ -41,5 +43,3 @@ export async function executeTool(toolId: string, parameters: Record<string, unk
   if (!response.ok) throw new Error('Failed to execute tool');
   return response.json();
 }
-
-import { Agent, Tool, TaskResponse } from '@/types';

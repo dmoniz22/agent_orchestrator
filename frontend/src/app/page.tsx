@@ -7,8 +7,10 @@ import AgentManager from '@/components/AgentManager'
 import ToolManager from '@/components/ToolManager'
 import ModelManager from '@/components/ModelManager'
 import SettingsPanel from '@/components/SettingsPanel'
+import CrewManager from '@/components/CrewManager'
+import SystemInfo from '@/components/SystemInfo'
 
-type View = 'chat' | 'agents' | 'tools' | 'models' | 'settings'
+type View = 'chat' | 'agents' | 'tools' | 'models' | 'settings' | 'crews' | 'system'
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>('chat')
@@ -26,6 +28,10 @@ export default function Home() {
         return <ModelManager />
       case 'settings':
         return <SettingsPanel />
+      case 'crews':
+        return <CrewManager />
+      case 'system':
+        return <SystemInfo />
       default:
         return <ChatInterface />
     }

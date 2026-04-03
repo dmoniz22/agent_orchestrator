@@ -13,8 +13,8 @@ from src.core.logging import get_logger
 logger = get_logger(__name__)
 router = APIRouter()
 
-# Path to the .env file
-ENV_FILE = Path(__file__).parent.parent.parent.parent / ".env"
+# Path to the .env file - use environment variable or default to /app/.env (Docker)
+ENV_FILE = Path(os.environ.get("ENV_FILE_PATH", "/app/.env"))
 
 
 class ApiKeysRequest(BaseModel):

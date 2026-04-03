@@ -260,7 +260,7 @@ class OrchestrationEngine:
             return OrchestratorDecision(
                 reasoning=f"Orchestrator failed: {str(e)}",
                 action=ActionType.FINAL_RESPONSE,
-                input=state.original_query,
+                input="I apologize, but I encountered an error while processing your request. Both the local AI (Ollama) and the cloud fallback (OpenRouter) are unavailable. Please check that Ollama is running locally, or that your OpenRouter API key is valid.",
                 is_complete=True,
             )
 

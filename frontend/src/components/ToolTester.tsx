@@ -130,7 +130,7 @@ export default function ToolTester() {
               Result
             </label>
             <pre className="bg-gray-50 p-3 rounded-lg text-xs overflow-x-auto max-h-48">
-              {JSON.stringify(result, null, 2)}
+              {String(JSON.stringify(result, null, 2))}
             </pre>
           </div>
         )}

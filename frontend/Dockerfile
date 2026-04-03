@@ -11,6 +11,10 @@ RUN npm install
 # Copy frontend source
 COPY frontend/ ./
 
+# Copy env file - use localhost for development outside Docker network
+# For production/Docker networking, override with http://backend:8000
+COPY frontend/.env.local ./.env.local
+
 # Expose port
 EXPOSE 3000
 

@@ -9,10 +9,12 @@ import {
   Cog6ToothIcon,
   Bars3Icon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ServerStackIcon,
+  RectangleGroupIcon
 } from '@heroicons/react/24/outline';
 
-type View = 'chat' | 'agents' | 'tools' | 'models' | 'settings';
+type View = 'chat' | 'agents' | 'tools' | 'models' | 'settings' | 'crews' | 'system';
 
 interface SidebarProps {
   currentView: View;
@@ -26,6 +28,8 @@ const navigation = [
   { name: 'Agents', view: 'agents' as View, icon: UsersIcon },
   { name: 'Tools', view: 'tools' as View, icon: WrenchIcon },
   { name: 'Models', view: 'models' as View, icon: CpuChipIcon },
+  { name: 'Crews', view: 'crews' as View, icon: RectangleGroupIcon },
+  { name: 'System', view: 'system' as View, icon: ServerStackIcon },
   { name: 'Settings', view: 'settings' as View, icon: Cog6ToothIcon },
 ];
 

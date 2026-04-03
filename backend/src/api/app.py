@@ -34,13 +34,14 @@ from .routes import (
     tools,
     tool_management,
     settings as settings_routes,
+    crews,
+    system,
 )
 from .middleware.errors import (
     validation_exception_handler,
     pydantic_exception_handler,
     general_exception_handler,
 )
-from .middleware.rate_limit import RateLimitMiddleware
 
 logger = get_logger(__name__)
 
@@ -231,14 +232,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Add rate limiting middleware (disabled in development by default)
-    app.add_middleware(
-        RateLimitMiddleware,
-        requests_per_minute=60,
-        requests_per_hour=1000,
-        burst_limit=10,
-    )
-
     # Add exception handlers
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(ValidationError, pydantic_exception_handler)
@@ -252,6 +245,8 @@ def create_app() -> FastAPI:
     app.include_router(tools.router, prefix="/api/v1/tools", tags=["Tools"])
     app.include_router(tool_management.router, prefix="/api/v1", tags=["Tool Management"])
     app.include_router(settings_routes.router, prefix="/api/v1", tags=["Settings"])
+    app.include_router(crews.router, prefix="/api/v1", tags=["Crews"])
+    app.include_router(system.router, prefix="/api/v1", tags=["System"])
 
     logger.info("FastAPI application created")
 
