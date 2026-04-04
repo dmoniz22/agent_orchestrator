@@ -53,9 +53,44 @@ export default function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSessionId(getStoredSessionId());
-    setMessages(loadStoredMessages());
-    setIsLoaded(true);
+    async function loadData() {
+      const storedSessionId = getStoredSessionId();
+      setSessionId(storedSessionId);
+      
+      // Load local messages first
+      const localMessages = loadStoredMessages();
+      setMessages(localMessages);
+      
+      // Then fetch from backend to get full history
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/api/v1/sessions/${storedSessionId}/history`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages && data.messages.length > 0) {
+            // Merge with local messages, removing duplicates
+            const backendMessages = data.messages.map((m: any) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              timestamp: m.timestamp ? new Date(m.timestamp) : new Date()
+            }));
+            
+            // Check if we need to merge
+            const localIds = new Set(localMessages.map(m => m.id));
+            const newFromBackend = backendMessages.filter((m: any) => !localIds.has(m.id));
+            if (newFromBackend.length > 0) {
+              setMessages([...localMessages, ...newFromBackend]);
+            }
+          }
+        }
+      } catch (e) {
+        // Silently fail - local messages will still show
+      }
+      
+      setIsLoaded(true);
+    }
+    loadData();
   }, []);
 
   useEffect(() => {
