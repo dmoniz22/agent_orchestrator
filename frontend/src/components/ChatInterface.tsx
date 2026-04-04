@@ -4,11 +4,61 @@ import { useState, useRef, useEffect } from 'react';
 import { Message, TaskResponse } from '@/types';
 import { executeTask } from '@/utils/api';
 
+const SESSION_STORAGE_KEY = 'omni_chat_session';
+const MESSAGES_STORAGE_KEY = 'omni_chat_messages';
+
+function generateSessionId(): string {
+  return 'session_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+function getStoredSessionId(): string {
+  if (typeof window === 'undefined') return generateSessionId();
+  
+  let sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!sessionId) {
+    sessionId = generateSessionId();
+    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  }
+  return sessionId;
+}
+
+function loadStoredMessages(): Message[] {
+  if (typeof window === 'undefined') return [];
+  
+  const stored = localStorage.getItem(MESSAGES_STORAGE_KEY);
+  if (!stored) return [];
+  
+  try {
+    const messages = JSON.parse(stored);
+    return messages.map((m: any) => ({
+      ...m,
+      timestamp: new Date(m.timestamp)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(messages: Message[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+}
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSessionId(getStoredSessionId());
+    setMessages(loadStoredMessages());
+  }, []);
+
+  useEffect(() => {
+    saveMessages(messages);
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,7 +84,7 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const response = await executeTask(input);
+      const response = await executeTask(input, sessionId);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -66,7 +116,10 @@ export default function ChatInterface() {
           <p className="text-sm text-gray-600">Ask anything to the multi-agent system</p>
         </div>
         <button
-          onClick={() => setMessages([])}
+          onClick={() => {
+            setMessages([]);
+            localStorage.removeItem(MESSAGES_STORAGE_KEY);
+          }}
           className="text-sm text-gray-500 hover:text-gray-700"
         >
           Clear Chat

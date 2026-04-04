@@ -1,4 +1,4 @@
-import { Agent, Tool, TaskResponse } from '@/types';
+import { Agent, Tool, TaskResponse, Message } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -14,13 +14,19 @@ export async function fetchTools(): Promise<Tool[]> {
   return response.json();
 }
 
-export async function executeTask(query: string): Promise<TaskResponse> {
+export async function executeTask(query: string, sessionId?: string): Promise<TaskResponse> {
   const response = await fetch(`${API_BASE_URL}/api/v1/tasks/execute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, session_id: sessionId }),
   });
   if (!response.ok) throw new Error('Failed to execute task');
+  return response.json();
+}
+
+export async function getSessionHistory(sessionId: string): Promise<Message[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/sessions/${sessionId}/history`);
+  if (!response.ok) throw new Error('Failed to fetch session history');
   return response.json();
 }
 

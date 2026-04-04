@@ -16,16 +16,18 @@ router = APIRouter()
 
 class TaskRequest(BaseModel):
     """Task execution request."""
-    
+
     query: str = Field(..., description="User query or task description")
-    session_id: UUID | None = Field(default=None, description="Session identifier")
-    workflow: WorkflowConfig | None = Field(default=None, description="Optional workflow configuration")
+    session_id: str | None = Field(default=None, description="Session identifier")
+    workflow: WorkflowConfig | None = Field(
+        default=None, description="Optional workflow configuration"
+    )
     context: dict[str, Any] | None = Field(default=None, description="Additional context")
 
 
 class TaskResponse(BaseModel):
     """Task execution response."""
-    
+
     task_id: UUID
     status: str
     response: str
@@ -39,30 +41,29 @@ class TaskResponse(BaseModel):
 @router.post("/execute", response_model=TaskResponse)
 async def execute_task(request: TaskRequest) -> TaskResponse:
     """Execute a task through the orchestration engine.
-    
+
     Args:
         request: Task execution request.
-        
+
     Returns:
         Task execution result.
     """
-    session_id = request.session_id or uuid4()
-    
-    logger.info(
-        "Executing task",
-        session_id=str(session_id),
-        query=request.query[:100]
-    )
-    
+    if request.session_id:
+        try:
+            session_id = UUID(request.session_id)
+        except ValueError:
+            session_id = uuid4()
+    else:
+        session_id = uuid4()
+
+    logger.info("Executing task", session_id=str(session_id), query=request.query[:100])
+
     try:
         # Use singleton orchestration engine with orchestrator agent configured
         engine = await get_orchestration_engine()
-        
-        result = await engine.run(
-            query=request.query,
-            session_id=session_id
-        )
-        
+
+        result = await engine.run(query=request.query, session_id=session_id)
+
         return TaskResponse(
             task_id=UUID(result.get("task_id", str(uuid4()))),
             status=result.get("status", "completed"),
@@ -71,24 +72,24 @@ async def execute_task(request: TaskRequest) -> TaskResponse:
             steps_taken=result.get("steps_taken", 0),
             agents_invoked=result.get("agents_invoked", []),
             tools_used=result.get("tools_used", []),
-            error=result.get("error")
+            error=result.get("error"),
         )
-        
+
     except Exception as e:
         logger.error("Task execution failed", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Task execution failed: {str(e)}"
+            detail=f"Task execution failed: {str(e)}",
         )
 
 
 @router.get("/{task_id}/status")
 async def get_task_status(task_id: UUID) -> dict:
     """Get task execution status.
-    
+
     Args:
         task_id: Task identifier.
-        
+
     Returns:
         Task status information.
     """
@@ -96,5 +97,5 @@ async def get_task_status(task_id: UUID) -> dict:
     return {
         "task_id": str(task_id),
         "status": "not_implemented",
-        "message": "Task status tracking not yet implemented"
+        "message": "Task status tracking not yet implemented",
     }

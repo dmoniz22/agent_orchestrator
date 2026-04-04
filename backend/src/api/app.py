@@ -36,6 +36,7 @@ from .routes import (
     settings as settings_routes,
     crews,
     system,
+    sessions,
 )
 from .middleware.errors import (
     validation_exception_handler,
@@ -247,6 +248,7 @@ def create_app() -> FastAPI:
     app.include_router(settings_routes.router, prefix="/api/v1", tags=["Settings"])
     app.include_router(crews.router, prefix="/api/v1", tags=["Crews"])
     app.include_router(system.router, prefix="/api/v1", tags=["System"])
+    app.include_router(sessions.router, prefix="/api/v1/sessions", tags=["Sessions"])
 
     logger.info("FastAPI application created")
 
