@@ -45,32 +45,24 @@ function saveMessages(messages: Message[]) {
 }
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem(MESSAGES_STORAGE_KEY);
-      if (stored) {
-        const msgs = JSON.parse(stored);
-        return msgs.map((m: any) => ({
-          ...m,
-          timestamp: new Date(m.timestamp)
-        }));
-      }
-    } catch {}
-    return [];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+  const [isLoaded, setIsLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSessionId(getStoredSessionId());
+    setMessages(loadStoredMessages());
+    setIsLoaded(true);
   }, []);
 
   useEffect(() => {
-    saveMessages(messages);
-  }, [messages]);
+    if (isLoaded) {
+      saveMessages(messages);
+    }
+  }, [messages, isLoaded]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
