@@ -12,14 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U omni -d omni"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
-    networks:
-      - omni-network
 
   backend:
     build:
@@ -27,12 +20,12 @@ services:
       dockerfile: backend/Dockerfile
     container_name: omni-backend
     environment:
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: omni
       DB_USER: omni
       DB_PASSWORD: omni_password
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_BASE_URL: http://localhost:11434
       API_HOST: 0.0.0.0
       API_PORT: 8000
       LOG_LEVEL: INFO
@@ -44,14 +37,8 @@ services:
       - ./backend/src:/app/src
       - ./backend/CONFIG:/app/CONFIG
       - ./backend/.env:/app/.env
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - omni-network
+    network_mode: host
 
   frontend:
     build:
@@ -61,7 +48,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -72,16 +59,11 @@ services:
       - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
       - /app/node_modules
       - /app/.next
-    networks:
-      - omni-network
     restart: unless-stopped
     command: npm run dev
+    network_mode: host
     depends_on:
       - backend
 
 volumes:
   postgres_data:
-
-networks:
-  omni-network:
-    driver: bridge
