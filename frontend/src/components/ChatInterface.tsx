@@ -45,7 +45,20 @@ function saveMessages(messages: Message[]) {
 }
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem(MESSAGES_STORAGE_KEY);
+      if (stored) {
+        const msgs = JSON.parse(stored);
+        return msgs.map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }));
+      }
+    } catch {}
+    return [];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
@@ -53,7 +66,6 @@ export default function ChatInterface() {
 
   useEffect(() => {
     setSessionId(getStoredSessionId());
-    setMessages(loadStoredMessages());
   }, []);
 
   useEffect(() => {
