@@ -48,21 +48,31 @@ async def execute_task(request: TaskRequest) -> TaskResponse:
     Returns:
         Task execution result.
     """
+    # Use session_id as-is if provided, otherwise generate new UUID
     if request.session_id:
-        try:
-            session_id = UUID(request.session_id)
-        except ValueError:
-            session_id = uuid4()
+        session_id_str = request.session_id
     else:
-        session_id = uuid4()
+        session_id_str = str(uuid4())
 
-    logger.info("Executing task", session_id=str(session_id), query=request.query[:100])
+    logger.info("Executing task", session_id=session_id_str[:50], query=request.query[:100])
 
     try:
         # Use singleton orchestration engine with orchestrator agent configured
         engine = await get_orchestration_engine()
 
-        result = await engine.run(query=request.query, session_id=session_id)
+        # Convert string session ID to deterministic UUID
+        # This ensures consistent session tracking across requests
+        try:
+            session_uuid = UUID(session_id_str)
+        except ValueError:
+            # Create deterministic UUID using MD5 hash with namespace
+            import hashlib
+
+            namespace = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+            hash_input = namespace.bytes + session_id_str.encode("utf-8")
+            session_uuid = UUID(bytes=hashlib.md5(hash_input).digest())
+
+        result = await engine.run(query=request.query, session_id=session_uuid)
 
         return TaskResponse(
             task_id=UUID(result.get("task_id", str(uuid4()))),

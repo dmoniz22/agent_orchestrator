@@ -36,18 +36,22 @@ async def get_session_history(session_id: str) -> SessionHistoryResponse:
         session_id: Session identifier.
 
     Returns:
-        Conversation history with messages.
+        Number of entries cleared.
     """
+    # Create deterministic UUID from string session ID
     try:
         session_uuid = UUID(session_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid session ID format"
-        )
+        import hashlib
 
-    from src.memory.manager import MemoryManager
+        namespace = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+        hash_input = namespace.bytes + session_id.encode("utf-8")
+        session_uuid = UUID(bytes=hashlib.md5(hash_input).digest())
 
-    memory_manager = MemoryManager()
+    # Import inside function to avoid circular import
+    from src.api.app import get_memory_manager
+
+    memory_manager = get_memory_manager()
 
     try:
         entries = await memory_manager.get_conversation_history(session_id=session_uuid, limit=50)
@@ -86,15 +90,20 @@ async def clear_session_history(session_id: str) -> dict:
         Number of entries cleared.
     """
     try:
-        session_uuid = UUID(session_id)
-    except ValueError:
+        try:
+            session_uuid = UUID(session_id)
+        except ValueError:
+            import hashlib
+
+            namespace = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+            hash_input = namespace.bytes + session_id.encode("utf-8")
+            session_uuid = UUID(bytes=hashlib.md5(hash_input).digest())
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid session ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid session ID format: {str(e)}"
         )
 
-    from src.memory.manager import MemoryManager
-
-    memory_manager = MemoryManager()
+    memory_manager = get_memory_manager()
 
     try:
         result = await memory_manager.clear_session(session_uuid)
