@@ -42,11 +42,13 @@ class APIConfig(BaseSettings):
     port: int = Field(default=8000, description="API server port")
     cors_origins: list[str] = Field(
         default=[
+            "*",
             "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:3002",
             "http://localhost:3003",
             "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
         ],
         description="Allowed CORS origins",
     )
